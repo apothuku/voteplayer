@@ -2,7 +2,7 @@ import socket
 
 sock = socket.socket()
 host = "192.168.43.104"
-port = 12360
+port = 12361
 
 sock.connect((host, port))
 print sock.recv(4096)

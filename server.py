@@ -9,7 +9,7 @@ songdict = dict()
 
 sock = socket.socket()
 host = "192.168.43.104"
-port = 12360
+port = 12361
 
 sock.bind((host, port))
 sock.listen(5)
@@ -41,11 +41,12 @@ def initialize_votes():
 
 # checks for user input, updates vote count based on song the user voted for
 def check_for_input(connection, songdict):
-    vote = connection.recv(4096)
-    print vote
-    if vote.isdigit() and int(vote) <= len(songdict.keys()):
-        songdict[int(vote)][1] = songdict[int(vote)][1] + 1
-        print songdict
+    while True:
+        vote = connection.recv(4096)
+        print vote
+        if vote.isdigit() and int(vote) <= len(songdict.keys()):
+            songdict[int(vote)][1] = songdict[int(vote)][1] + 1
+            print songdict
 
 
 def handle_initial_connection(songdict):
@@ -70,7 +71,6 @@ thread = Thread(target=handle_initial_connection, args=(songdict,))
 thread.start()
 
 while True:
-    print "looping"
     best_song, max_votes = get_best_song()
     print "max votes: " + str(max_votes)
     initialize_votes()
