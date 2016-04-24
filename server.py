@@ -2,7 +2,7 @@
 
 import socket
 import os
-import thread
+from threading import Thread
 from subprocess import Popen
 
 # globals
@@ -15,7 +15,7 @@ new_connections = []
 
 sock = socket.socket()
 host = "192.168.43.104"
-port = 12345
+port = 12346
 
 sock.bind((host, port))
 sock.listen(5)
@@ -44,18 +44,21 @@ def initialize_votes():
 
 
 def handle_initial_connection():
-    print "begin handle_initial_connection"
-    connection, addr = sock.accept()
-    print 'Got connection from', addr
-    initial_message = "Thank you for connecting to this pi\n"
-    initial_message += "Please vote for a song\n"
-    counter = 1
-    for song in os.listdir("songs"):
-        initial_message += str(counter) + " " + song
-        counter += 1
-    connection.send(initial_message)
-    new_connections.append(connection)
-    print "end handle_initial_connection"
+    while True:
+        print "begin handle_initial_connection"
+        connection, addr = sock.accept()
+        print 'Got connection from', addr
+        initial_message = "Thank you for connecting to this pi\n"
+        initial_message += "Please vote for a song\n"
+        counter = 1
+        for song in os.listdir("songs"):
+            initial_message += str(counter) + " " + song
+            counter += 1
+        connection.send(initial_message)
+
+        thread = Thread(target=check_for_input, args=(connection,))
+        thread.start()
+        print "end handle_initial_connection"
 
 
 # checks for user input, updates vote count based on song the user voted for
@@ -76,27 +79,19 @@ def play_song(best_song):
 initialize_votes()
 
 # create thread to handle new connections
-try:
-    thread.start_new_thread(handle_initial_connection())
-except:
-    print "Error: unable to start thread to handle connections"
-
+thread = Thread(target=handle_initial_connection)
+thread.start()
+print "after thread"
 while True:
-    # create a new thread for each user to wait for votes
-    for connection in new_connections:
-        try:
-            thread.start_new_thread(check_for_input(connection))
-        except:
-            print "Erro: unable to start new thread for user input"
-
+    print "looping"
     # if song is not playing, play the most popular song
-    print os.system("sh currently_playing.sh")
     if os.system("sh currently_playing.sh") != 0:
         best_song, max_votes = get_best_song()
         print "max votes: " + str(max_votes)
-        thread.start_new_thread(play_song(best_song))
+        thread = Thread(target=play_song, args=(best_song,))
         initialize_votes()
-        print "continuing"
 
 for connection in new_connections:
     connection.close()
+
+sock.close()
