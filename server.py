@@ -3,29 +3,25 @@
 import socket
 import os
 from threading import Thread
-from subprocess import Popen
-
-# globals
 
 # initialize the song-to-votes dictionary
 songdict = dict()
 
-# maintain a list of new connections, ensuring we only make one thread per connection
-new_connections = []
-
 sock = socket.socket()
 host = "192.168.43.104"
-port = 12346
+port = 12360
 
 sock.bind((host, port))
 sock.listen(5)
 
 print "now listening!"
 
+
 # find the highest voted song
 def get_best_song():
     max_votes = -1
     best_song = ""
+    print songdict
     for key, value in songdict.iteritems():
         curr_votes = value[1]
         if curr_votes > max_votes:
@@ -43,9 +39,17 @@ def initialize_votes():
         counter += 1
 
 
-def handle_initial_connection():
+# checks for user input, updates vote count based on song the user voted for
+def check_for_input(connection, songdict):
+    vote = connection.recv(4096)
+    print vote
+    if vote.isdigit() and int(vote) <= len(songdict.keys()):
+        songdict[int(vote)][1] = songdict[int(vote)][1] + 1
+        print songdict
+
+
+def handle_initial_connection(songdict):
     while True:
-        print "begin handle_initial_connection"
         connection, addr = sock.accept()
         print 'Got connection from', addr
         initial_message = "Thank you for connecting to this pi\n"
@@ -56,42 +60,20 @@ def handle_initial_connection():
             counter += 1
         connection.send(initial_message)
 
-        thread = Thread(target=check_for_input, args=(connection,))
+        thread = Thread(target=check_for_input, args=(connection, songdict))
         thread.start()
-        print "end handle_initial_connection"
-
-
-# checks for user input, updates vote count based on song the user voted for
-def check_for_input(connection):
-    new_connections.remove(connection)
-    vote = connection.recv(4096)
-    print vote
-    if vote.isdigit() and int(vote) <= len(songdict.keys()):
-            print "valid vote"
-            songdict[int(vote)][1] = songdict[int(vote)][1] + 1
-
-
-def play_song(best_song):
-    print "about to play song"
-    os.system("omxplayer songs/" + best_song)
-    print "finished playing song"
 
 initialize_votes()
 
 # create thread to handle new connections
-thread = Thread(target=handle_initial_connection)
+thread = Thread(target=handle_initial_connection, args=(songdict,))
 thread.start()
-print "after thread"
+
 while True:
     print "looping"
-    # if song is not playing, play the most popular song
-    if os.system("sh currently_playing.sh") != 0:
-        best_song, max_votes = get_best_song()
-        print "max votes: " + str(max_votes)
-        thread = Thread(target=play_song, args=(best_song,))
-        initialize_votes()
-
-for connection in new_connections:
-    connection.close()
+    best_song, max_votes = get_best_song()
+    print "max votes: " + str(max_votes)
+    initialize_votes()
+    os.system("omxplayer songs/" + best_song)
 
 sock.close()
