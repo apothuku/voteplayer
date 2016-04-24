@@ -66,7 +66,7 @@ while True:
     # if song is not playing, play the most popular song
     if not os.system("sh currently_playing.sh"):
         best_song, max_votes = get_best_song()
-        os.system("omxplayer " + best_song)
+        os.system("omxplayer songs/" + best_song)
         initialize_votes()
 
 for connection in connections:
