@@ -19,20 +19,23 @@ sock.listen(5)
 
 # find the highest voted song
 def get_best_song():
-    max = 0
-    best_song = None
-    for song in songdict:
-        curr = songdict[song]
-        if curr > max:
-            max = curr
-            best_song = song
-    return best_song
+    max_votes = -1
+    best_song = ""
+    for key, value in songdict.iteritems():
+        curr_votes = value[1]
+        if curr_votes > max_votes:
+            max_votes = curr_votes
+            best_song = value[0]
+    print best_song + " " + str(max_votes)
+    return (best_song, max_votes)
 
 
 # initialize number of votes for each song to 0
 def initialize_votes():
+    counter = 0
     for song in os.listdir("songs"):
-        songdict.update({song: 0})
+        songdict[counter] = [song, 0]
+        counter++
 
 
 def handle_initial_connection():
@@ -43,7 +46,9 @@ def handle_initial_connection():
     initial_message += "1. example.mp3"
     connection.send(initial_message)
     connections.append(connection)
+
 initialize_votes()
+
 while True:
     handle_initial_connection()
 
@@ -52,8 +57,14 @@ while True:
         print vote
         if vote.isdigit():
             print "valid vote"
+            songdict[vote][1] = songdict[vote][1] + 1
         if vote == "quit":
             break
+    # if song is not playing, play the most popular song
+    if not os.system("sh currently_playing.sh"):
+        best_song, max_votes = get_best_song()
+        os.system("omxplayer " + best_song)
+        initialize_votes()
 
 for connection in connections:
     connection.close()
