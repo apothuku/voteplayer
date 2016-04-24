@@ -35,7 +35,7 @@ def initialize_votes():
     counter = 0
     for song in os.listdir("songs"):
         songdict[counter] = [song, 0]
-        counter++
+        counter += 1
 
 
 def handle_initial_connection():
