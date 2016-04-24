@@ -1,10 +1,14 @@
 import socket
 
-s = socket.socket()
+sock = socket.socket()
 host = "192.168.43.104"
 port = 12345
 
-s.connect((host, port))
-print s.recv(4096)
+sock.connect((host, port))
+print sock.recv(4096)
 
-s.close()
+while True:
+    user_input = input("Enter your vote")
+    sock.send(user_input)
+
+sock.close()
