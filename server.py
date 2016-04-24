@@ -32,7 +32,7 @@ def get_best_song():
 
 # initialize number of votes for each song to 0
 def initialize_votes():
-    counter = 0
+    counter = 1
     for song in os.listdir("songs"):
         songdict[counter] = [song, 0]
         counter += 1
@@ -43,7 +43,10 @@ def handle_initial_connection():
     print 'Got connection from', addr
     initial_message = "Thank you for connecting to this pi\n"
     initial_message += "Please vote for a song\n"
-    initial_message += "1. example.mp3"
+    counter = 1
+    for song in os.listdir("songs"):
+        initial_message += str(counter) + " " + song
+        counter += 1
     connection.send(initial_message)
     connections.append(connection)
 
