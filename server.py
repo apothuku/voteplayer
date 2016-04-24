@@ -2,6 +2,7 @@
 
 import socket
 import os
+from subprocess import Popen
 
 # globals
 
@@ -16,6 +17,7 @@ port = 12345
 sock.bind((host, port))
 sock.listen(5)
 
+print "now listening!"
 
 # find the highest voted song
 def get_best_song():
@@ -53,21 +55,28 @@ def handle_initial_connection():
 initialize_votes()
 
 while True:
+    print "begin handle_initial_connection"
     handle_initial_connection()
+    print "end handle_initial_connection"
 
     for connection in connections:
         vote = connection.recv(4096)
         print vote
-        if vote.isdigit() and int(vote) < len(songdict.keys()):
+        if vote.isdigit() and int(vote) <= len(songdict.keys()):
             print "valid vote"
             songdict[int(vote)][1] = songdict[int(vote)][1] + 1
         if vote == "quit":
             break
     # if song is not playing, play the most popular song
-    if not os.system("sh currently_playing.sh"):
+    print os.system("sh currently_playing.sh")
+    if os.system("sh currently_playing.sh") != 0:
         best_song, max_votes = get_best_song()
-        os.system("omxplayer songs/" + best_song)
+        print "about to execute command"
+        Popen("omxplayer songs/" + best_song, shell=True)
+        print "executed command"
         initialize_votes()
+        print "continuing"
+        continue
 
 for connection in connections:
     connection.close()
