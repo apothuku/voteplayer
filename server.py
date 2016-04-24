@@ -58,9 +58,9 @@ while True:
     for connection in connections:
         vote = connection.recv(4096)
         print vote
-        if vote.isdigit():
+        if vote.isdigit() and int(vote) < len(songdict.keys()):
             print "valid vote"
-            songdict[vote][1] = songdict[vote][1] + 1
+            songdict[int(vote)][1] = songdict[int(vote)][1] + 1
         if vote == "quit":
             break
     # if song is not playing, play the most popular song
