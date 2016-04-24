@@ -57,6 +57,7 @@ def handle_initial_connection():
     new_connections.append(connection)
     print "end handle_initial_connection"
 
+
 # checks for user input, updates vote count based on song the user voted for
 def check_for_input(connection):
     new_connections.remove(connection)
@@ -65,8 +66,7 @@ def check_for_input(connection):
     if vote.isdigit() and int(vote) <= len(songdict.keys()):
             print "valid vote"
             songdict[int(vote)][1] = songdict[int(vote)][1] + 1
-        if vote == "quit":
-            break
+
 
 def play_song(best_song):
     print "about to play song"
@@ -76,16 +76,16 @@ def play_song(best_song):
 initialize_votes()
 
 # create thread to handle new connections
- try:
-    thread.start_new_thread( handle_initial_connection() )
- except:
+try:
+    thread.start_new_thread(handle_initial_connection())
+except:
     print "Error: unable to start thread to handle connections"
 
 while True:
     # create a new thread for each user to wait for votes
-    for connection in connections:
+    for connection in new_connections:
         try:
-            thread.start_new_thread( check_for_input(connection) )
+            thread.start_new_thread(check_for_input(connection))
         except:
             print "Erro: unable to start new thread for user input"
 
@@ -94,10 +94,9 @@ while True:
     if os.system("sh currently_playing.sh") != 0:
         best_song, max_votes = get_best_song()
         print "max votes: " + str(max_votes)
-        thread.start_new_thread( play_song(best_song) )
+        thread.start_new_thread(play_song(best_song))
         initialize_votes()
         print "continuing"
-        continue
 
-for connection in connections:
+for connection in new_connections:
     connection.close()
