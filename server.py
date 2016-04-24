@@ -2,13 +2,16 @@
 
 import socket
 import os
+import thread
 from subprocess import Popen
 
 # globals
 
 # initialize the song-to-votes dictionary
 songdict = dict()
-connections = []
+
+# maintain a list of new connections, ensuring we only make one thread per connection
+new_connections = []
 
 sock = socket.socket()
 host = "192.168.43.104"
@@ -41,6 +44,7 @@ def initialize_votes():
 
 
 def handle_initial_connection():
+    print "begin handle_initial_connection"
     connection, addr = sock.accept()
     print 'Got connection from', addr
     initial_message = "Thank you for connecting to this pi\n"
@@ -50,30 +54,47 @@ def handle_initial_connection():
         initial_message += str(counter) + " " + song
         counter += 1
     connection.send(initial_message)
-    connections.append(connection)
-
-initialize_votes()
-
-while True:
-    print "begin handle_initial_connection"
-    handle_initial_connection()
+    new_connections.append(connection)
     print "end handle_initial_connection"
 
-    for connection in connections:
-        vote = connection.recv(4096)
-        print vote
-        if vote.isdigit() and int(vote) <= len(songdict.keys()):
+# checks for user input, updates vote count based on song the user voted for
+def check_for_input(connection):
+    new_connections.remove(connection)
+    vote = connection.recv(4096)
+    print vote
+    if vote.isdigit() and int(vote) <= len(songdict.keys()):
             print "valid vote"
             songdict[int(vote)][1] = songdict[int(vote)][1] + 1
         if vote == "quit":
             break
+
+def play_song(best_song):
+    print "about to play song"
+    os.system("omxplayer songs/" + best_song)
+    print "finished playing song"
+
+initialize_votes()
+
+# create thread to handle new connections
+ try:
+    thread.start_new_thread( handle_initial_connection() )
+ except:
+    print "Error: unable to start thread to handle connections"
+
+while True:
+    # create a new thread for each user to wait for votes
+    for connection in connections:
+        try:
+            thread.start_new_thread( check_for_input(connection) )
+        except:
+            print "Erro: unable to start new thread for user input"
+
     # if song is not playing, play the most popular song
     print os.system("sh currently_playing.sh")
     if os.system("sh currently_playing.sh") != 0:
         best_song, max_votes = get_best_song()
-        print "about to execute command"
-        Popen("omxplayer songs/" + best_song, shell=True)
-        print "executed command"
+        print "max votes: " + str(max_votes)
+        thread.start_new_thread( play_song(best_song) )
         initialize_votes()
         print "continuing"
         continue
