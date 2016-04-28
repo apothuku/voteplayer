@@ -13,7 +13,7 @@ connections = []
 
 sock = socket.socket()
 host = "192.168.43.104"
-port = 12368
+port = 12373
 
 sock.bind((host, port))
 sock.listen(5)
@@ -46,7 +46,7 @@ def initialize_votes():
         can_vote[thread_id] = True
 
     for connection in connections:
-        connection.send("Enter your vote for the next song.")
+        connection.send("Enter your vote for the next song.\n")
 
 
 # checks for user input, updates vote count based on song the user voted for
@@ -59,6 +59,7 @@ def check_for_input(connection, thread_id):
             songdict[int(vote)][1] = songdict[int(vote)][1] + 1
             print songdict
             can_vote[thread_id] = False
+        print "now get the vote"
 
 
 def handle_initial_connection():
