@@ -7,6 +7,10 @@ from threading import Thread
 # initialize the song-to-votes dictionary
 songdict = dict()
 
+can_vote = dict()
+
+connections = []
+
 sock = socket.socket()
 host = "192.168.43.104"
 port = 12363
@@ -37,17 +41,26 @@ def initialize_votes():
         songdict[counter] = [song, 0]
         counter += 1
 
+    for thread_id in can_vote:
+        can_vote[thread_id] = True
+
+    for connection in connections:
+        connection.send("Enter your vote for the next song.")
+
 
 # checks for user input, updates vote count based on song the user voted for
-def check_for_input(connection):
+def check_for_input(connection, thread_id):
+    can_vote[thread_id] = True
     while True:
         vote = connection.recv(4096)
         print vote
-        if vote.isdigit() and int(vote) <= len(songdict.keys()):
+        if vote.isdigit() and int(vote) <= len(songdict.keys()) and can_vote[thread_id]:
             songdict[int(vote)][1] = songdict[int(vote)][1] + 1
+            can_vote[thread_id] = False
 
 
 def handle_initial_connection():
+    thread_id = 0
     while True:
         connection, addr = sock.accept()
         print 'Got connection from', addr
@@ -59,8 +72,11 @@ def handle_initial_connection():
             counter += 1
         connection.send(initial_message)
 
-        thread = Thread(target=check_for_input, args=(connection,))
+        connections.append(connection)
+
+        thread = Thread(target=check_for_input, args=(connection,thread_id,))
         thread.start()
+        thread_id += 1
 
 initialize_votes()
 
