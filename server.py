@@ -13,7 +13,7 @@ connections = []
 
 sock = socket.socket()
 host = "192.168.43.104"
-port = 12365
+port = 12368
 
 sock.bind((host, port))
 sock.listen(5)
@@ -25,6 +25,7 @@ print "now listening!"
 def get_best_song():
     max_votes = -1
     best_song = ""
+    print songdict
     for key, value in songdict.iteritems():
         curr_votes = value[1]
         if curr_votes > max_votes:
@@ -56,6 +57,7 @@ def check_for_input(connection, thread_id):
         print vote
         if vote.isdigit() and int(vote) <= len(songdict.keys()) and can_vote[thread_id]:
             songdict[int(vote)][1] = songdict[int(vote)][1] + 1
+            print songdict
             can_vote[thread_id] = False
 
 
