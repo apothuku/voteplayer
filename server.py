@@ -13,7 +13,7 @@ connections = []
 
 sock = socket.socket()
 host = "192.168.43.104"
-port = 12363
+port = 12365
 
 sock.bind((host, port))
 sock.listen(5)
@@ -68,13 +68,13 @@ def handle_initial_connection():
         initial_message += "Please vote for a song\n"
         counter = 1
         for song in os.listdir("songs"):
-            initial_message += str(counter) + " " + song
+            initial_message += str(counter) + " " + song + "\n"
             counter += 1
         connection.send(initial_message)
 
         connections.append(connection)
 
-        thread = Thread(target=check_for_input, args=(connection,thread_id,))
+        thread = Thread(target=check_for_input, args=(connection, thread_id,))
         thread.start()
         thread_id += 1
 
