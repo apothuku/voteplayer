@@ -9,11 +9,11 @@ songdict = dict()
 
 can_vote = dict()
 
-connections = []
+connections = dict()
 
 sock = socket.socket()
 host = "192.168.43.104"
-port = 12373
+port = 12375
 
 sock.bind((host, port))
 sock.listen(5)
@@ -23,9 +23,8 @@ print "now listening!"
 
 # find the highest voted song
 def get_best_song():
-    max_votes = -1
+    max_votes = 0
     best_song = ""
-    print songdict
     for key, value in songdict.iteritems():
         curr_votes = value[1]
         if curr_votes > max_votes:
@@ -43,10 +42,9 @@ def initialize_votes():
         counter += 1
 
     for thread_id in can_vote:
-        can_vote[thread_id] = True
-
-    for connection in connections:
-        connection.send("Enter your vote for the next song.\n")
+        if not can_vote[thread_id]:
+            connections[thread_id].send("Enter your vote for the next song.\n")
+            can_vote[thread_id] = True
 
 
 # checks for user input, updates vote count based on song the user voted for
@@ -57,9 +55,7 @@ def check_for_input(connection, thread_id):
         print vote
         if vote.isdigit() and int(vote) <= len(songdict.keys()) and can_vote[thread_id]:
             songdict[int(vote)][1] = songdict[int(vote)][1] + 1
-            print songdict
             can_vote[thread_id] = False
-        print "now get the vote"
 
 
 def handle_initial_connection():
@@ -75,7 +71,7 @@ def handle_initial_connection():
             counter += 1
         connection.send(initial_message)
 
-        connections.append(connection)
+        connections[thread_id] = connection
 
         thread = Thread(target=check_for_input, args=(connection, thread_id,))
         thread.start()
@@ -89,7 +85,8 @@ thread.start()
 
 while True:
     best_song, max_votes = get_best_song()
-    initialize_votes()
-    os.system("omxplayer songs/" + best_song)
+    if max_votes != 0:
+        initialize_votes()
+        os.system("omxplayer songs/" + best_song)
 
 sock.close()
